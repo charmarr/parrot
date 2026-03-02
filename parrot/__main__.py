@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 
+from theow.codegraph import CodeGraph
+
+from parrot._engine import parrot
 from parrot._runner import run_itest, run_lint, run_static, run_unit
 
 COLLECTIONS = ("lint", "static", "unit", "itest")
@@ -29,6 +32,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="integration test file name, required for itest (e.g. test_deploy.py)",
     )
+    parser.add_argument(
+        "--lib-path",
+        default=None,
+        help="path to charmarr-lib source for codegraph indexing",
+    )
     return parser
 
 
@@ -38,6 +46,12 @@ def main() -> None:
 
     if args.collection == "itest" and not args.suite:
         parser.error("--suite is required for itest collection")
+
+    # CodeGraph needs charm_path which is only known after arg parsing
+    graph = CodeGraph(root=args.charm_path, languages=["python"])
+    if args.lib_path:
+        graph.add_root(args.lib_path)
+    parrot.tool()(graph.search_code)
 
     dispatch = {
         "lint": lambda: run_lint(args.charm_path),
