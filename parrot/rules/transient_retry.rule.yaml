@@ -1,0 +1,25 @@
+name: transient_retry
+description: >
+  Transient infrastructure failure during integration test. Juju CLI
+  connection drops, k8s API timeouts, cloud provider rate limits.
+  No code changes needed, theow retries the marked function automatically.
+
+when:
+  - fact: stderr
+    regex: '(timeout|timed out|rate limit|connection refused|resource unavailable|ECONNRESET|ConnectionResetError|HTTPSConnectionPool|RemoteDisconnected|temporary failure|connection is shut down)'
+    examples:
+      - "ERROR connection is shut down"
+      - "ConnectionResetError: [Errno 104] Connection reset by peer"
+      - "urllib3.exceptions.MaxRetryError: HTTPSConnectionPool"
+      - "socket.timeout: timed out"
+      - "ConnectionRefusedError: [Errno 111] Connection refused"
+      - "OSError: [Errno 11] Resource temporarily unavailable"
+      - "http.client.RemoteDisconnected: Remote end closed connection"
+  - fact: collection
+    equals: itest
+
+then:
+  - action: retry_command
+
+tags: [itest, transient, juju, infrastructure, network]
+collection: itest

@@ -1,0 +1,21 @@
+name: codespell_fix
+description: >
+  Codespell found misspellings in the codebase. Run codespell --write-changes
+  to auto-fix them.
+
+when:
+  - fact: stdout
+    regex: '\.py:\d+: \w+ ==> \w+'
+    examples:
+      - "src/charm.py:42: misspeling ==> misspelling"
+      - "tests/test_charm.py:10: cant ==> can't"
+  - fact: collection
+    equals: lint
+
+then:
+  - action: codespell_fix
+    params:
+      charm_path: '{charm_path}'
+
+tags: [lint, codespell, spelling, autofix]
+collection: lint

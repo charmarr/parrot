@@ -1,0 +1,21 @@
+name: ruff_autofix
+description: >
+  Ruff found lint violations or formatting issues. Run ruff check --fix
+  and ruff format to auto-fix what it can.
+
+when:
+  - fact: stdout
+    regex: 'Found \d+ error'
+    examples:
+      - "Found 3 errors."
+      - "Found 1 error (1 fixed, 0 remaining)."
+  - fact: collection
+    equals: lint
+
+then:
+  - action: ruff_fix
+    params:
+      charm_path: '{charm_path}'
+
+tags: [lint, ruff, format, autofix]
+collection: lint
