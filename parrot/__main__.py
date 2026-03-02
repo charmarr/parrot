@@ -6,6 +6,7 @@ import argparse
 
 from theow.codegraph import CodeGraph
 
+import parrot._engine as _engine
 from parrot._engine import parrot
 from parrot._runner import run_itest, run_lint, run_static, run_unit
 
@@ -37,6 +38,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="path to charmarr-lib source for codegraph indexing",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="skip remote operations (git push, gh pr create/comment)",
+    )
     return parser
 
 
@@ -46,6 +53,8 @@ def main() -> None:
 
     if args.collection == "itest" and not args.suite:
         parser.error("--suite is required for itest collection")
+
+    _engine._dry_run = args.dry_run
 
     # CodeGraph needs charm_path which is only known after arg parsing
     graph = CodeGraph(root=args.charm_path, languages=["python"])

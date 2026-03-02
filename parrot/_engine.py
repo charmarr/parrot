@@ -11,6 +11,8 @@ from theow import Theow
 
 logger = logging.getLogger("parrot")
 
+_dry_run = False
+
 parrot = Theow(
     theow_dir=Path(__file__).parent,
     name="Parrot",
@@ -89,19 +91,22 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
             ["commit", "-m", f"fix({collection}): auto-healed by parrot"],
             cwd=charm_path,
         )
-        _git(["push", "-u", "origin", fix_branch], cwd=charm_path)
-
-        pr_result = subprocess.run(
-            [
-                "gh", "pr", "create",
-                "--title", f"fix({collection}): auto-healed by parrot",
-                "--body", "Automated fix by parrot CI auto-healing.",
-                "--base", base_branch,
-            ],
-            cwd=charm_path, capture_output=True, text=True, check=False,
-        )
-        pr_url = pr_result.stdout.strip()
-        logger.info("fix PR created: %s", pr_url)
+        if _dry_run:
+            logger.info("dry-run: skipping push and PR creation for %s", fix_branch)
+            pr_url = f"(dry-run) {fix_branch}"
+        else:
+            _git(["push", "-u", "origin", fix_branch], cwd=charm_path)
+            pr_result = subprocess.run(
+                [
+                    "gh", "pr", "create",
+                    "--title", f"fix({collection}): auto-healed by parrot",
+                    "--body", "Automated fix by parrot CI auto-healing.",
+                    "--base", base_branch,
+                ],
+                cwd=charm_path, capture_output=True, text=True, check=False,
+            )
+            pr_url = pr_result.stdout.strip()
+            logger.info("fix PR created: %s", pr_url)
 
         state["suppress_exc"] = False
         raise ParrotHealed(f"Fixed by parrot. PR: {pr_url}")
@@ -115,7 +120,10 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
     if attempt >= max_retries:
         observations = state.get("_observations", "")
         if observations:
-            _post_observations(charm_path, observations)
+            if _dry_run:
+                logger.info("dry-run: would post observations:\n%s", observations)
+            else:
+                _post_observations(charm_path, observations)
 
     logger.debug("teardown: attempt=%d restored workspace", attempt)
 
