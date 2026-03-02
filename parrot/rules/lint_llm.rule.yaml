@@ -1,0 +1,18 @@
+name: lint_llm
+description: >
+  LLM fallback for lint failures not handled by deterministic rules.
+  Investigates ruff/codespell errors and fixes the code.
+
+when:
+  - fact: collection
+    equals: lint
+
+llm_config:
+  prompt_template: file://prompts/fix_lint.md
+  tools: [read_file, write_charm_file, run_lint_cmd, list_directory, git_diff]
+  constraints:
+    max_tool_calls: 60
+    max_tokens: 200000
+
+tags: [lint, ruff, codespell, llm]
+collection: lint

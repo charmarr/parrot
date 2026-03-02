@@ -1,0 +1,19 @@
+name: itest_llm
+description: >
+  LLM investigation for integration test failures. Retries to rule out transient
+  issues, then investigates the live Juju model with juju/kubectl, diagnoses root
+  cause, and fixes code or charm configuration.
+
+when:
+  - fact: collection
+    equals: itest
+
+llm_config:
+  prompt_template: file://prompts/fix_itest.md
+  tools: [read_file, write_charm_file, run_test_cmd, run_juju_cmd, run_kubectl_cmd, pack_charm, retry_test, list_directory, git_diff, search_code]
+  constraints:
+    max_tool_calls: 60
+    max_tokens: 200000
+
+tags: [itest, integration, juju, kubernetes, llm]
+collection: itest

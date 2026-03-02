@@ -1,0 +1,18 @@
+name: unit_llm
+description: >
+  LLM investigation for unit test (pytest) failures. Analyzes tracebacks,
+  determines whether source or test is wrong, and fixes the right one.
+
+when:
+  - fact: collection
+    equals: unit
+
+llm_config:
+  prompt_template: file://prompts/fix_unit.md
+  tools: [read_file, write_charm_file, run_test_cmd, list_directory, git_diff, search_code]
+  constraints:
+    max_tool_calls: 60
+    max_tokens: 200000
+
+tags: [unit, pytest, testing, llm]
+collection: unit

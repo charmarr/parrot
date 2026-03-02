@@ -1,0 +1,18 @@
+name: static_llm
+description: >
+  LLM investigation for static analysis (pyright) failures. Reads type errors,
+  understands codebase structure, and fixes type annotations.
+
+when:
+  - fact: collection
+    equals: static
+
+llm_config:
+  prompt_template: file://prompts/fix_static.md
+  tools: [read_file, write_charm_file, run_static_cmd, list_directory, git_diff, search_code]
+  constraints:
+    max_tool_calls: 60
+    max_tokens: 200000
+
+tags: [static, pyright, typing, llm]
+collection: static
