@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import secrets
 import subprocess
 
@@ -43,19 +44,44 @@ def stash_restore(charm_path: str, dry_run: bool) -> None:
         git(["clean", "-fd"], cwd=charm_path)
 
 
-def create_fix_pr(charm_path: str) -> str | None:
+def create_fix_pr(charm_path: str, state: dict) -> str | None:
     git(["config", "user.name", "parrot[bot]"], cwd=charm_path)
     git(["config", "user.email", "parrot-bot@charmarr.dev"], cwd=charm_path)
 
-    base_branch = git(
-        ["rev-parse", "--abbrev-ref", "HEAD"], cwd=charm_path
-    ).stdout.strip()
-    fix_branch = f"parrot/{base_branch}-{secrets.token_hex(4)}"
+    source_branch = (
+        os.environ.get("GITHUB_HEAD_REF")
+        or os.environ.get("GITHUB_REF_NAME")
+        or git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=charm_path).stdout.strip()
+    )
+    target_branch = source_branch
+    hex_id = secrets.token_hex(4)
+    fix_branch = f"parrot/{source_branch}-{hex_id}"
 
-    git(["checkout", "-B", fix_branch], cwd=charm_path)
-    git(["add", "-A"], cwd=charm_path)
+    fn_name = state.get("_fn_name", "")
+    collection = fn_name.removeprefix("run_") if fn_name else "unknown"
+    title = f"fix({collection}): auto-healed by parrot [{hex_id}]"
 
-    commit = git(["commit", "-m", "fix: auto-healed by parrot"], cwd=charm_path)
+    observation = state.get("_observation")
+    reason = getattr(observation, "reason", "") if observation else ""
+    rule = getattr(observation, "rule", "") if observation else ""
+    body = f"Automated fix by parrot CI auto-healing.\n\n**Collection:** `{collection}`"
+    if rule:
+        body += f"\n**Rule:** `{rule}`"
+    if reason:
+        body += f"\n\n**What was fixed:**\n{reason}"
+
+    git(["add", "."], cwd=charm_path)
+    git(["stash", "push", "--include-untracked", "-m", "parrot-fix"], cwd=charm_path)
+    git(["fetch", "origin", source_branch], cwd=charm_path)
+    git(["checkout", "-B", fix_branch, f"origin/{source_branch}"], cwd=charm_path)
+
+    stash_pop = git(["stash", "pop"], cwd=charm_path)
+    if stash_pop.returncode != 0:
+        logger.warning("Could not apply fix to feature branch — conflict likely")
+        return None
+    git(["add", "."], cwd=charm_path)
+
+    commit = git(["commit", "-m", f"{title} [skip ci]"], cwd=charm_path)
     if commit.returncode != 0:
         return None
 
@@ -69,11 +95,11 @@ def create_fix_pr(charm_path: str) -> str | None:
             "pr",
             "create",
             "--title",
-            "fix: auto-healed by parrot",
+            title,
             "--body",
-            "Automated fix by parrot CI auto-healing.",
+            body,
             "--base",
-            base_branch,
+            target_branch,
         ],
         cwd=charm_path,
         capture_output=True,
@@ -87,14 +113,9 @@ def create_fix_pr(charm_path: str) -> str | None:
     return pr_result.stdout.strip() or None
 
 
-def post_observations(charm_path: str, observations: str) -> None:
-    pr_number = find_pr_number(charm_path)
-    if not pr_number:
-        logger.warning("No PR found to post observations")
-        return
-
+def comment_on_pr(charm_path: str, pr_number: str, body: str) -> None:
     subprocess.run(
-        ["gh", "pr", "comment", pr_number, "--body", observations],
+        ["gh", "pr", "comment", pr_number, "--body", body],
         cwd=charm_path,
         capture_output=True,
         text=True,
