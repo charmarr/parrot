@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 from theow.codegraph import CodeGraph
 
 import parrot._engine as _engine
+import parrot._lifecycle as _lifecycle
 from parrot._engine import parrot
 from parrot._runner import run_integration, run_lint, run_static, run_unit
 
@@ -57,7 +59,6 @@ def main() -> None:
 
     _engine._dry_run = args.dry_run
 
-    # CodeGraph needs charm_path which is only known after arg parsing
     graph = CodeGraph(root=args.charm_path, languages=["python"])
     for root in args.extra_index:
         graph.add_root(root)
@@ -70,6 +71,13 @@ def main() -> None:
         "integration": lambda: run_integration(args.charm_path, args.suite),
     }
     dispatch[args.collection]()
+
+    if _lifecycle._healed:
+        if _lifecycle._pr_url:
+            print(f"Healed by parrot. PR: {_lifecycle._pr_url}")
+        else:
+            print("Healed by parrot but PR creation failed — check logs.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

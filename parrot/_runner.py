@@ -6,7 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from parrot._engine import parrot, setup, setup_itest, teardown
+from parrot._engine import parrot
+from parrot._lifecycle import setup, setup_itest, teardown
 
 
 def _tox_context(charm_path: str, exc: Exception, collection: str) -> dict:
@@ -32,7 +33,11 @@ def _run_tox(env: str, charm_path: str, extra_args: list[str] | None = None) -> 
     if extra_args:
         cmd += ["--", *extra_args]
     proc = subprocess.Popen(
-        cmd, cwd=charm_path, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        cmd,
+        cwd=charm_path,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
     )
     lines: list[str] = []
     for line in proc.stdout:
@@ -87,7 +92,10 @@ def run_unit(charm_path: str) -> None:
 
 @parrot.mark(
     context_from=lambda charm_path, suite, exc: _integration_context(
-        charm_path, suite, exc, "integration",
+        charm_path,
+        suite,
+        exc,
+        "integration",
         f"parrot-{Path(charm_path).name}-{Path(suite).stem}".replace("_", "-"),
     ),
     max_retries=3,
@@ -101,6 +109,7 @@ def run_unit(charm_path: str) -> None:
 def run_integration(charm_path: str, suite: str) -> None:
     model = f"parrot-{Path(charm_path).name}-{Path(suite).stem}".replace("_", "-")
     _run_tox(
-        "integration", charm_path,
+        "integration",
+        charm_path,
         extra_args=["-k", suite, "--keep-models", "--model", model],
     )

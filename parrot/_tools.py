@@ -103,8 +103,17 @@ def pack_charm(charm_path: str) -> dict:
     build_dir = Path(charm_path).parent / "parrot-build"
     build_dir.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
-        ["charmcraft", "pack", "--project-dir", charm_path, "--output-dir", str(build_dir)],
-        capture_output=True, text=True, timeout=600,
+        [
+            "charmcraft",
+            "pack",
+            "--project-dir",
+            charm_path,
+            "--output-dir",
+            str(build_dir),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=600,
     )
     charm_files = list(build_dir.glob("*.charm"))
     return {
@@ -120,7 +129,10 @@ def retry_test(suite: str, charm_path: str) -> dict:
     """Re-run a test against the existing model to check for transient failure."""
     result = subprocess.run(
         ["uvx", "tox", "-e", "integration", "--", "-k", suite],
-        cwd=charm_path, capture_output=True, text=True, timeout=600,
+        cwd=charm_path,
+        capture_output=True,
+        text=True,
+        timeout=600,
     )
     return {
         "returncode": result.returncode,
