@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from parrot._engine import parrot, setup, setup_itest, teardown
@@ -17,7 +18,7 @@ def _tox_context(charm_path: str, exc: Exception, collection: str) -> dict:
     return ctx
 
 
-def _itest_context(
+def _integration_context(
     charm_path: str, suite: str, exc: Exception, collection: str, model: str
 ) -> dict:
     ctx = _tox_context(charm_path, exc, collection)
@@ -27,10 +28,19 @@ def _itest_context(
 
 
 def _run_tox(env: str, charm_path: str, extra_args: list[str] | None = None) -> None:
-    cmd = ["tox", "-e", env]
+    cmd = ["uvx", "tox", "-e", env]
     if extra_args:
         cmd += ["--", *extra_args]
-    subprocess.run(cmd, cwd=charm_path, check=True, capture_output=True, text=True)
+    proc = subprocess.Popen(
+        cmd, cwd=charm_path, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    )
+    lines: list[str] = []
+    for line in proc.stdout:
+        sys.stdout.write(line)
+        lines.append(line)
+    rc = proc.wait()
+    if rc != 0:
+        raise subprocess.CalledProcessError(rc, cmd, "".join(lines), "")
 
 
 @parrot.mark(
@@ -76,20 +86,20 @@ def run_unit(charm_path: str) -> None:
 
 
 @parrot.mark(
-    context_from=lambda charm_path, suite, exc: _itest_context(
-        charm_path, suite, exc, "itest",
-        f"parrot-{Path(charm_path).name}-{Path(suite).stem}",
+    context_from=lambda charm_path, suite, exc: _integration_context(
+        charm_path, suite, exc, "integration",
+        f"parrot-{Path(charm_path).name}-{Path(suite).stem}".replace("_", "-"),
     ),
     max_retries=3,
-    tags=["itest", "integration", "juju"],
+    tags=["integration", "juju"],
     fallback=True,
     explorable=False,
-    collection="itest",
+    collection="integration",
     setup=setup_itest,
     teardown=teardown,
 )
-def run_itest(charm_path: str, suite: str) -> None:
-    model = f"parrot-{Path(charm_path).name}-{Path(suite).stem}"
+def run_integration(charm_path: str, suite: str) -> None:
+    model = f"parrot-{Path(charm_path).name}-{Path(suite).stem}".replace("_", "-")
     _run_tox(
         "integration", charm_path,
         extra_args=["-k", suite, "--keep-models", "--model", model],

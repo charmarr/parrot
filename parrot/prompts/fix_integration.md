@@ -97,6 +97,8 @@ a deliberate fix in Step 4 (e.g., refreshing with a new charm pack).
 - When refreshing, use the charm file path from `pack_charm` output
 - All file commands must use `cwd="{charm_path}"` where applicable
 - Make minimal changes — fix only the root cause
+- NEVER modify files under `lib/` — these are third-party charm libraries we do not own
+- ONLY modify files under `{charm_path}` — never touch other charms or directories outside it
 
 ## Charmarr Patterns
 

@@ -1,4 +1,4 @@
-name: itest_llm
+name: integration_llm
 description: >
   LLM investigation for integration test failures. Retries to rule out transient
   issues, then investigates the live Juju model with juju/kubectl, diagnoses root
@@ -6,14 +6,14 @@ description: >
 
 when:
   - fact: collection
-    equals: itest
+    equals: integration
 
 llm_config:
-  prompt_template: file://prompts/fix_itest.md
+  prompt_template: file://prompts/fix_integration.md
   tools: [read_file, write_charm_file, run_test_cmd, run_juju_cmd, run_kubectl_cmd, pack_charm, retry_test, list_directory, git_diff, search_code]
   constraints:
     max_tool_calls: 60
     max_tokens: 200000
 
-tags: [itest, integration, juju, kubernetes, llm]
-collection: itest
+tags: [integration, juju, kubernetes, llm]
+collection: integration

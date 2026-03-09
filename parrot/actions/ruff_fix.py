@@ -7,11 +7,11 @@ from theow import action
 def ruff_fix(charm_path: str) -> dict:
     """Run ruff check --fix and ruff format to auto-fix lint violations."""
     check = subprocess.run(
-        ["ruff", "check", "--fix", charm_path],
+        ["uvx", "ruff", "check", "--fix", charm_path],
         capture_output=True, text=True,
     )
     fmt = subprocess.run(
-        ["ruff", "format", charm_path],
+        ["uvx", "ruff", "format", charm_path],
         capture_output=True, text=True,
     )
 

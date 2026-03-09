@@ -16,10 +16,10 @@ when:
       - "OSError: [Errno 11] Resource temporarily unavailable"
       - "http.client.RemoteDisconnected: Remote end closed connection"
   - fact: collection
-    equals: itest
+    equals: integration
 
 then:
   - action: retry_command
 
-tags: [itest, transient, juju, infrastructure, network]
-collection: itest
+tags: [integration, transient, juju, infrastructure, network]
+collection: integration

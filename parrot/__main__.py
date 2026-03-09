@@ -8,9 +8,9 @@ from theow.codegraph import CodeGraph
 
 import parrot._engine as _engine
 from parrot._engine import parrot
-from parrot._runner import run_itest, run_lint, run_static, run_unit
+from parrot._runner import run_integration, run_lint, run_static, run_unit
 
-COLLECTIONS = ("lint", "static", "unit", "itest")
+COLLECTIONS = ("lint", "static", "unit", "integration")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -21,7 +21,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "collection",
         choices=COLLECTIONS,
-        help="tox collection to run (lint, static, unit, itest)",
+        help="tox collection to run (lint, static, unit, integration)",
     )
     parser.add_argument(
         "--charm-path",
@@ -31,12 +31,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--suite",
         default=None,
-        help="integration test file name, required for itest (e.g. test_deploy.py)",
+        help="integration test file name, required for integration (e.g. test_deploy.py)",
     )
     parser.add_argument(
-        "--lib-path",
-        default=None,
-        help="path to charmarr-lib source for codegraph indexing",
+        "--extra-index",
+        action="append",
+        default=[],
+        help="additional source root for codegraph indexing (repeatable)",
     )
     parser.add_argument(
         "--dry-run",
@@ -51,22 +52,22 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    if args.collection == "itest" and not args.suite:
-        parser.error("--suite is required for itest collection")
+    if args.collection == "integration" and not args.suite:
+        parser.error("--suite is required for integration collection")
 
     _engine._dry_run = args.dry_run
 
     # CodeGraph needs charm_path which is only known after arg parsing
     graph = CodeGraph(root=args.charm_path, languages=["python"])
-    if args.lib_path:
-        graph.add_root(args.lib_path)
+    for root in args.extra_index:
+        graph.add_root(root)
     parrot.tool()(graph.search_code)
 
     dispatch = {
         "lint": lambda: run_lint(args.charm_path),
         "static": lambda: run_static(args.charm_path),
         "unit": lambda: run_unit(args.charm_path),
-        "itest": lambda: run_itest(args.charm_path, args.suite),
+        "integration": lambda: run_integration(args.charm_path, args.suite),
     }
     dispatch[args.collection]()
 

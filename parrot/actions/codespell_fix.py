@@ -7,7 +7,7 @@ from theow import action
 def codespell_fix(charm_path: str) -> dict:
     """Run codespell --write-changes to auto-fix misspellings."""
     result = subprocess.run(
-        ["codespell", "--write-changes", charm_path],
+        ["uvx", "codespell", "--write-changes", charm_path],
         capture_output=True, text=True,
     )
 

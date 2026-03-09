@@ -62,6 +62,8 @@ Fix the failing unit tests shown above.
 - Do NOT delete failing tests — fix them
 - All commands must use `cwd="{charm_path}"`
 - Make minimal changes — fix only the reported failures
+- NEVER modify files under `lib/` — these are third-party charm libraries we do not own
+- ONLY modify files under `{charm_path}` — never touch other charms or directories outside it
 
 ## Charmarr Patterns
 

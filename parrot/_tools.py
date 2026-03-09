@@ -39,10 +39,15 @@ parrot.tool()(run_command)
 parrot.tool()(list_directory)
 
 
+_CHARMARR_ROOT = Path(__file__).resolve().parent.parent.parent / "charmarr"
+
+
 @parrot.tool()
 def write_charm_file(path: str, content: str) -> str:
-    """Write content to a file in the charm workspace. PR review is the safety net."""
-    p = Path(path)
+    """Write content to a file in the charm workspace. Path must be inside the charmarr repo."""
+    p = Path(path).resolve()
+    if not p.is_relative_to(_CHARMARR_ROOT):
+        return f"Blocked: '{path}' is not under '{_CHARMARR_ROOT}'"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content)
     return f"Written {len(content)} bytes to {path}"
@@ -114,7 +119,7 @@ def pack_charm(charm_path: str) -> dict:
 def retry_test(suite: str, charm_path: str) -> dict:
     """Re-run a test against the existing model to check for transient failure."""
     result = subprocess.run(
-        ["tox", "-e", "integration", "--", "-k", suite],
+        ["uvx", "tox", "-e", "integration", "--", "-k", suite],
         cwd=charm_path, capture_output=True, text=True, timeout=600,
     )
     return {

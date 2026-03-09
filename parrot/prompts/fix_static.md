@@ -58,6 +58,8 @@ Fix the pyright type errors shown above.
 - `# type: ignore` is a last resort, only when the error is a false positive
 - All commands must use `cwd="{charm_path}"`
 - Make minimal changes — fix only the reported errors
+- NEVER modify files under `lib/` — these are third-party charm libraries we do not own
+- ONLY modify files under `{charm_path}` — never touch other charms or directories outside it
 
 ## When to Give Up
 

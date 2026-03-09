@@ -2,26 +2,29 @@
 
 from __future__ import annotations
 
-import logging
 import os
+import secrets
 import subprocess
 from pathlib import Path
 
-from theow import Theow
+from theow import GatewayConfig, Theow
+from theow._core._logging import get_logger
 
-logger = logging.getLogger("parrot")
+logger = get_logger("parrot")
 
 _dry_run = False
 
 parrot = Theow(
     theow_dir=Path(__file__).parent,
     name="Parrot",
-    llm="copilot/gpt-5.3-codex",
-    llm_secondary="copilot/claude-opus-4-6",
+    llm="claude-agent/claude-opus-4-6",
+    llm_secondary="claude-agent/claude-opus-4-6",
     session_limit=int(os.environ.get("PARROT_SESSION_LIMIT", "10")),
     max_tool_calls_per_session=60,
-    max_tokens_per_session=int(os.environ.get("PARROT_MAX_TOKENS", "200000")),
+    max_tokens_per_session=int(os.environ.get("PARROT_MAX_TOKENS", "1000000")),
     archive_llm_attempt=True,
+    _gateway_config=GatewayConfig(options={"effort": "high"}),
+    logfire=True,
 )
 
 
@@ -45,7 +48,7 @@ def _stash_checkpoint(state: dict, charm_path: str, attempt: int) -> None:
     if stash_created:
         _git(["stash", "apply"], cwd=charm_path)
 
-    logger.debug("setup: attempt=%d stash_created=%s", attempt, stash_created)
+    logger.debug("Stash checkpoint", attempt=attempt, stash_created=stash_created)
 
 
 def setup(state: dict, attempt: int) -> dict:
@@ -67,7 +70,7 @@ def setup_itest(state: dict, attempt: int) -> dict:
             ["juju", "refresh", charm_name, "--path", charm_file],
             cwd=charm_path, capture_output=True, text=True, check=False,
         )
-        logger.debug("setup_itest: refreshed %s from %s", charm_name, charm_file)
+        logger.debug("Juju refresh from clean build", charm=charm_name, path=charm_file)
 
     return state
 
@@ -79,40 +82,40 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
         if state.get("_stash_created"):
             _git(["stash", "drop"], cwd=charm_path)
 
-        collection = state.get("_collection", "fix")
-        base_branch = _git(
-            ["rev-parse", "--abbrev-ref", "HEAD"], cwd=charm_path
-        ).stdout.strip()
-        fix_branch = f"parrot/{base_branch}/{collection}"
-
-        _git(["checkout", "-b", fix_branch], cwd=charm_path)
-        _git(["add", "-A"], cwd=charm_path)
-        _git(
-            ["commit", "-m", f"fix({collection}): auto-healed by parrot"],
-            cwd=charm_path,
-        )
         if _dry_run:
-            logger.info("dry-run: skipping push and PR creation for %s", fix_branch)
-            pr_url = f"(dry-run) {fix_branch}"
+            logger.info("Dry-run: skipping branch, push, and PR creation")
+            pr_url = "(dry-run)"
         else:
+            base_branch = _git(
+                ["rev-parse", "--abbrev-ref", "HEAD"], cwd=charm_path
+            ).stdout.strip()
+            fix_branch = f"parrot/{base_branch}-{secrets.token_hex(4)}"
+
+            _git(["checkout", "-B", fix_branch], cwd=charm_path)
+            _git(["add", "-A"], cwd=charm_path)
+            _git(
+                ["commit", "-m", "fix: auto-healed by parrot"],
+                cwd=charm_path,
+            )
             _git(["push", "-u", "origin", fix_branch], cwd=charm_path)
             pr_result = subprocess.run(
                 [
                     "gh", "pr", "create",
-                    "--title", f"fix({collection}): auto-healed by parrot",
+                    "--title", "fix: auto-healed by parrot",
                     "--body", "Automated fix by parrot CI auto-healing.",
                     "--base", base_branch,
                 ],
                 cwd=charm_path, capture_output=True, text=True, check=False,
             )
             pr_url = pr_result.stdout.strip()
-            logger.info("fix PR created: %s", pr_url)
+            logger.info("Fix PR created", url=pr_url)
 
         state["suppress_exc"] = False
         raise ParrotHealed(f"Fixed by parrot. PR: {pr_url}")
 
-    _git(["checkout", "--", "."], cwd=charm_path)
-    _git(["clean", "-fd"], cwd=charm_path)
+    if not _dry_run:
+        _git(["checkout", "--", "."], cwd=charm_path)
+        _git(["clean", "-fd"], cwd=charm_path)
     if state.get("_stash_created"):
         _git(["stash", "pop"], cwd=charm_path)
 
@@ -121,17 +124,17 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
         observations = state.get("_observations", "")
         if observations:
             if _dry_run:
-                logger.info("dry-run: would post observations:\n%s", observations)
+                logger.info("Dry-run: would post observations", observations=observations)
             else:
                 _post_observations(charm_path, observations)
 
-    logger.debug("teardown: attempt=%d restored workspace", attempt)
+    logger.debug("Workspace restored", attempt=attempt)
 
 
 def _post_observations(charm_path: str, observations: str) -> None:
     pr_number = _find_pr_number(charm_path)
     if not pr_number:
-        logger.warning("no PR found to post observations")
+        logger.warning("No PR found to post observations")
         return
 
     subprocess.run(
