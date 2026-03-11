@@ -127,8 +127,20 @@ def pack_charm(charm_path: str) -> dict:
 @parrot.tool()
 def retry_test(suite: str, charm_path: str) -> dict:
     """Re-run a test against the existing model to check for transient failure."""
+    model = f"parrot-{Path(charm_path).name}-{Path(suite).stem}".replace("_", "-")
     result = subprocess.run(
-        ["uvx", "tox", "-e", "integration", "--", "-k", suite],
+        [
+            "uvx",
+            "tox",
+            "-e",
+            "integration",
+            "--",
+            "-k",
+            suite,
+            "--keep-models",
+            "--model",
+            model,
+        ],
         cwd=charm_path,
         capture_output=True,
         text=True,

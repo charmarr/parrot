@@ -46,7 +46,14 @@ def stash_restore(charm_path: str, dry_run: bool) -> None:
 
 def create_fix_pr(charm_path: str, state: dict) -> str | None:
     git(["config", "user.name", "charmarr-parrot[bot]"], cwd=charm_path)
-    git(["config", "user.email", "266865120+charmarr-parrot[bot]@users.noreply.github.com"], cwd=charm_path)
+    git(
+        [
+            "config",
+            "user.email",
+            "266865120+charmarr-parrot[bot]@users.noreply.github.com",
+        ],
+        cwd=charm_path,
+    )
 
     source_branch = (
         os.environ.get("GITHUB_HEAD_REF")
