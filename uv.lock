@@ -1788,7 +1788,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "theow", extras = ["codegraph", "claude-agent"], specifier = ">=0.2.0" }]
+requires-dist = [{ name = "theow", extras = ["codegraph", "claude-agent"], specifier = ">=0.2.1" }]
 
 [[package]]
 name = "pathable"
@@ -2700,7 +2700,7 @@ wheels = [
 
 [[package]]
 name = "theow"
-version = "0.2.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anthropic" },
@@ -2715,9 +2715,9 @@ dependencies = [
     { name = "structlog" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/14/d4/4d2dc1d443926129d65f6a6505f82f990a3c5f87da6af0a3c0beaba89af3/theow-0.2.0.tar.gz", hash = "sha256:4a8438efc2341359f0ab3cd366af1b3fe299bab9d673134785f24b8498f22754", size = 1659670, upload-time = "2026-03-08T23:27:06.478Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/b8/aa0dcfd4893c051793a12541971fbfa9551eec025a9fc2dd9cd2d7403b67/theow-0.2.1.tar.gz", hash = "sha256:3b1ca6f7dc5ae07310f5ae6877f16ae20b9c710b3f41fd092b08d4c5f2ed0a3b", size = 1661088, upload-time = "2026-03-12T02:02:58.969Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/5a/5fad34ce5a575ce2f47b0c1177295608ae8e5a47b57fbd041d7778e9e716/theow-0.2.0-py3-none-any.whl", hash = "sha256:22217110de8172342817abcc95aa4f85800a7059dc00eac6a3012e7a6cffeb37", size = 96998, upload-time = "2026-03-08T23:27:04.689Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/0f/780a95de3052793a1885ac8935b16a25d425775b5d55422e5bc874ea60bd/theow-0.2.1-py3-none-any.whl", hash = "sha256:afbd91e426b8083d403cf116217319fd6d8f229937b308c864990ae526fa8a12", size = 98357, upload-time = "2026-03-12T02:02:57.698Z" },
 ]
 
 [package.optional-dependencies]

@@ -5,7 +5,7 @@ description = "CI auto-healing for charmarr charms"
 license = "GPL-3.0-only"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "theow[codegraph,claude-agent]>=0.2.0",
+    "theow[codegraph,claude-agent]>=0.2.1",
 ]
 
 [build-system]
