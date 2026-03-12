@@ -102,6 +102,7 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
         git(["stash", "pop"], cwd=charm_path)
 
     observation = state.get("_observation")
+    logger.debug("Teardown failure state", has_observation=bool(observation), has_parent_pr=bool(state.get("_parent_pr")), fn_name=state.get("_fn_name"), keys=list(state.keys()))
     if observation:
         collection = state.get("_fn_name", "unknown")
         outcome = getattr(observation, "outcome", "unknown")
