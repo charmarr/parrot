@@ -90,9 +90,7 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
                 logger.info("Fix PR created", url=url)
                 parent_pr = state.get("_parent_pr")
                 if parent_pr:
-                    comment_on_pr(
-                        charm_path, parent_pr, f"Parrot auto-healed this PR. Fix: {url}"
-                    )
+                    comment_on_pr(charm_path, parent_pr, f"Parrot auto-healed this PR. Fix: {url}")
             else:
                 logger.warning("PR creation failed — check git/gh output above")
 
@@ -103,17 +101,28 @@ def teardown(state: dict, attempt: int, success: bool) -> None:
     if state.get("_stash_created"):
         git(["stash", "pop"], cwd=charm_path)
 
-    max_retries = state.get("_max_retries", 3)
-    if attempt >= max_retries:
-        observations = state.get("_observations", "")
-        if observations:
-            if dry_run:
-                logger.info(
-                    "Dry-run: would post observations", observations=observations
-                )
-            else:
-                parent_pr = state.get("_parent_pr")
-                if parent_pr:
-                    comment_on_pr(charm_path, parent_pr, observations)
+    observation = state.get("_observation")
+    if observation:
+        collection = state.get("_fn_name", "unknown")
+        outcome = getattr(observation, "outcome", "unknown")
+        rule = getattr(observation, "rule", "unknown")
+        reason = getattr(observation, "reason", "")
+        comment = (
+            f"### Parrot recovery failed\n\n"
+            f"| Field | Value |\n"
+            f"|-------|-------|\n"
+            f"| Collection | `{collection}` |\n"
+            f"| Rule | `{rule}` |\n"
+            f"| Outcome | `{outcome}` |\n"
+            f"| Attempt | {attempt} |\n\n"
+        )
+        if reason:
+            comment += f"**LLM message:** {reason}\n"
+
+        parent_pr = state.get("_parent_pr")
+        if dry_run:
+            logger.info("Dry-run: would post failure comment", comment=comment)
+        elif parent_pr:
+            comment_on_pr(charm_path, parent_pr, comment)
 
     logger.debug("Workspace restored", attempt=attempt)
