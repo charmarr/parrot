@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
-
-os.environ.setdefault("THEOW_LOG_LEVEL", "DEBUG")
 
 from theow.codegraph import CodeGraph
 
