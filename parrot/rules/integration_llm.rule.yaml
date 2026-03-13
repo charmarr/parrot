@@ -12,8 +12,8 @@ llm_config:
   prompt_template: file://prompts/fix_integration.md
   tools: [read_file, write_charm_file, run_test_cmd, run_juju_cmd, run_kubectl_cmd, pack_charm, retry_test, list_directory, git_diff, search_code]
   constraints:
-    max_tool_calls: 60
-    max_tokens: 200000
+    max_tool_calls: 100
+    max_tokens: 1000000
 
 tags: [integration, juju, kubernetes, llm]
 collection: integration
